@@ -1,0 +1,24 @@
+language: java
+
+jdk:
+- oraclejdk8
+- openjdk8
+- openjdk7
+# openjdk7 or oraclejdk current fail on Travis CI because they might be no longer available -> requested an up-to-date list of available JDKs at https://github.com/travis-ci/docs-travis-ci-com/issues/1482
+# Java 9 not supported yet
+
+env:
+- MAVEN_OPTS="-Xms2g -Xmx6g"
+
+install: /bin/true
+before_script: /bin/true
+
+script:
+- travis_wait 50 bash -c 'mvn --batch-mode --show-version install -DskipTests=true -Dmaven.javadoc.skip=true &> /tmp/tomee-build.log || (tail -n 1000 /tmp/tomee-build.log; exit 1)'
+    # - add --update-snapshots if snapshots are used
+    # - `travis_wait` is necessary in order to avoid execution cancelation by Travis CI after 10 minutes without output
+    # displaying 10000 lines with `tail` causes 4MB log limit to be exceeded
+- travis_wait 50 bash -c 'mvn --batch-mode verify &> /tmp/tomee-test.log || (tail -n 1000 /tmp/tomee-test.log; exit 1)'
+    # - `mvn test` along causes the log limit of 4MB to be exceeded
+    # - adding `--quiet` to `mvn` doesn't change anything on the output length (4 MB log limit on travis-ci.org is exceeded)
+
